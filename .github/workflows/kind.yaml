@@ -1,0 +1,34 @@
+name: End to End Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      arc_name:
+        description: "Target ARC name used for `runs-on` in job"
+        required: true
+        default: self-hosted
+
+jobs:
+  e2e-test:
+    runs-on: ${{ inputs.arc_name }}
+    strategy:
+      matrix:
+        k8s-version: ['v1.24.0']
+
+    steps:
+    - uses: actions/checkout@v4
+
+    # https://github.com/helm/kind-action 
+    - name: Install k8s ${{ matrix.k8s-version }}
+      uses: helm/kind-action@v1.10.0
+      with:
+        version: ${{ matrix.kind-version }}
+        cluster_name: kind
+        config: ./k8s/kind-config.yaml
+        kubectl_version: v1.30.0
+        node_image: kindest/node:${{ matrix.k8s-version }}
+
+    - name: Testing 
+      run: |
+        kubectl wait --for=condition=Ready nodes --all --timeout=5m
+        kubectl get nodes -o wide
