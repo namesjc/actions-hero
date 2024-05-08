@@ -31,6 +31,6 @@ jobs:
       - name: Testing
         run: |
           # kind get kubeconfig --name kind
-          kubectl cluster-info
+          sleep 10000
           kubectl wait --for=condition=Ready nodes --all --timeout=5m
           kubectl get nodes -o wide
