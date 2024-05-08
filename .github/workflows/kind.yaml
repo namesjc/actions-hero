@@ -18,6 +18,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup Kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: v1.30.0
+
       # https://github.com/helm/kind-action
       - name: Install k8s ${{ matrix.k8s-version }}
         uses: helm/kind-action@v1.10.0
