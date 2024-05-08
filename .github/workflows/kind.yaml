@@ -24,7 +24,7 @@ jobs:
       with:
         version: ${{ matrix.kind-version }}
         cluster_name: kind
-        config: ./k8s/kind-config.yaml
+        # config: ./k8s/kind-config.yaml
         kubectl_version: v1.30.0
         node_image: kindest/node:${{ matrix.k8s-version }}
 
