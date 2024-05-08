@@ -30,7 +30,7 @@ jobs:
 
       - name: Testing
         run: |
-          kind get kubeconfig --name kind
-          sleep 10000
+          # kind get kubeconfig --name kind
+          kubectl cluster-info
           kubectl wait --for=condition=Ready nodes --all --timeout=5m
           kubectl get nodes -o wide
