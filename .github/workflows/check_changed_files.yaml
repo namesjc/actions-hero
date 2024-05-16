@@ -20,13 +20,14 @@ jobs:
     name: Test changed-files
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0 # OR "2" -> To retrieve the preceding commit.
 
       - name: Get changed files
         id: changed-files
         uses: tj-actions/changed-files@v44
-      # NOTE: `since_last_remote_commit: true` is implied by default and falls back to the previous local commit.
+        with:
+          # Avoid using single or double quotes for multiline patterns
+          files: |
+            **.csv
 
       - name: List all changed files
         env:
