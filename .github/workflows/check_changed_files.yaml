@@ -28,6 +28,7 @@ jobs:
           # Avoid using single or double quotes for multiline patterns
           files: |
             **.csv
+          files_ignore: ./result.csv
 
       - name: List all changed files
         env:
