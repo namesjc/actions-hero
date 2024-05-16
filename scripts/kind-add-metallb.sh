@@ -26,7 +26,7 @@ cd $SCRIPT_PARENT_DIR
 
 # On v0.13.4 and older
 echo "deploying metallb LoadBalancer"
-kubectl apply -f  https://raw.githubusercontent.com/metallb/metallb/${METALLB_VERSION}/config/manifests/metallb-native.yaml
+kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/${METALLB_VERSION}/config/manifests/metallb-native.yaml
 
 # https://fabianlee.org/2022/01/27/kubernetes-using-kubectl-to-wait-for-condition-of-pods-deployments-services/
 echo "waiting for metallb"
