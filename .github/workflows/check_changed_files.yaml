@@ -32,27 +32,23 @@ jobs:
             **.csv
           files_ignore: ./result.csv
           json: true
-          quotepath: true
+          escape_json: false
 
-      # - name: List all changed files
-      #   env:
-      #     ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
-      #   run: |
-      #     for file in ${ALL_CHANGED_FILES}; do
-      #       echo "$file was changed"
-      #     done
-
-  matrix:
-    runs-on: ubuntu-latest
-    name: Loop changed files
-    needs: changed_files
-    strategy:
-      matrix:
-        file: ${{ fromJson(needs.changed_files.outputs.all_changed_files) }}
-    steps:
-      # - name: Checkout repository
-      #   uses: actions/checkout@v2
-      - name: Changed file
+      - name: List all changed files
+        env:
+          ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
         run: |
-          echo "Changed file: ${{ matrix.file }}"
-        shell: bash
+          echo "All changed files: $ALL_CHANGED_FILES"
+
+  # matrix:
+  #   runs-on: ubuntu-latest
+  #   name: Loop changed files
+  #   needs: changed_files
+  #   strategy:
+  #     matrix:
+  #       file: ${{ fromJson(needs.changed_files.outputs.all_changed_files) }}
+  #   steps:
+  #     - name: Changed file
+  #       run: |
+  #         echo "Changed file: ${{ matrix.file }}"
+  #       shell: bash
