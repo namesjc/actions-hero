@@ -18,6 +18,8 @@ jobs:
   changed_files:
     runs-on: ubuntu-latest # windows-latest || macos-latest
     name: Test changed-files
+    outputs:
+      all_changed_files: ${{ steps.changed-files.outputs.all_changed_files }}
     steps:
       - uses: actions/checkout@v4
 
@@ -44,7 +46,7 @@ jobs:
     needs: changed_files
     strategy:
       matrix:
-        file: ${{fromJson(needs.changed_files.outputs.all_changed_files)}}
+        file: ${{ needs.changed_files.outputs.all_changed_files }}
     steps:
       # - name: Checkout repository
       #   uses: actions/checkout@v2
