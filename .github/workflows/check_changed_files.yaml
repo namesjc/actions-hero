@@ -40,15 +40,14 @@ jobs:
         run: |
           echo "All changed files: $ALL_CHANGED_FILES"
 
-  # matrix:
-  #   runs-on: ubuntu-latest
-  #   name: Loop changed files
-  #   needs: changed_files
-  #   strategy:
-  #     matrix:
-  #       file: ${{ fromJson(needs.changed_files.outputs.all_changed_files) }}
-  #   steps:
-  #     - name: Changed file
-  #       run: |
-  #         echo "Changed file: ${{ matrix.file }}"
-  #       shell: bash
+  matrix:
+    runs-on: ubuntu-latest
+    name: Loop changed files
+    needs: changed_files
+    strategy:
+      matrix:
+        file: ${{ needs.changed_files.outputs.all_changed_files }}
+    steps:
+      - name: Changed file
+        run: |
+          echo "Changed file: ${{ matrix.file }}"
