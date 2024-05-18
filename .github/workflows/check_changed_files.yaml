@@ -31,6 +31,7 @@ jobs:
           files: |
             **.csv
           files_ignore: ./result.csv
+          json: true
 
       # - name: List all changed files
       #   env:
@@ -46,7 +47,7 @@ jobs:
     needs: changed_files
     strategy:
       matrix:
-        file: ${{ needs.changed_files.outputs.all_changed_files }}
+        file: ${{ fromJson(needs.changed_files.outputs.all_changed_files) }}
     steps:
       # - name: Checkout repository
       #   uses: actions/checkout@v2
