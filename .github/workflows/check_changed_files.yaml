@@ -33,6 +33,8 @@ jobs:
           files_ignore: ./result.csv
           json: true
           escape_json: false
+          quotepath: false
+          safe_output: false
 
       - name: List all changed files
         env:
