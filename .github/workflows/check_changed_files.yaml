@@ -32,6 +32,7 @@ jobs:
             **.csv
           files_ignore: ./result.csv
           json: true
+          quotepath: true
 
       # - name: List all changed files
       #   env:
