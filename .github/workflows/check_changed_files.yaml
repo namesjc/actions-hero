@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest # windows-latest || macos-latest
     name: Test changed-files
     outputs:
-      all_changed_files: ${{ steps.changed-files.outputs.all_changed_files }}
+      matrix: ${{ steps.changed-files.outputs.all_changed_files }}
     steps:
       - uses: actions/checkout@v4
 
@@ -31,10 +31,7 @@ jobs:
           files: |
             **.csv
           files_ignore: ./result.csv
-          json: true
-          escape_json: false
-          quotepath: false
-          safe_output: false
+          matrix: true
 
       - name: List all changed files
         env:
@@ -48,7 +45,7 @@ jobs:
     needs: changed_files
     strategy:
       matrix:
-        file: ${{ needs.changed_files.outputs.all_changed_files }}
+        file: ${{ fromJson(needs.changed_files.outputs.matrix) }}
     steps:
       - name: Changed file
         run: |
