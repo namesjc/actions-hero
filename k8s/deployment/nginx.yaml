@@ -47,7 +47,7 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
-    - host: nginx.example.com
+    - host: nginx.k8s.intra
       http:
         paths:
           - backend:
