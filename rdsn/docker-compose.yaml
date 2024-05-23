@@ -1,0 +1,63 @@
+version: "2"
+
+services:
+  etcd:
+    image: gcr.io/etcd-development/etcd:v3.3.13
+    volumes:
+      - ./etcd-data:/etcd-data
+    restart: always
+    network_mode: host
+    logging:
+      driver: json-file
+      options:
+        max-file: "2"
+        max-size: 25m
+    command:
+      - /usr/local/bin/etcd
+      - --name
+      - rdnsdb
+      - --data-dir
+      - /etcd-data
+      - --force-new-cluster
+      - --listen-client-urls
+      - http://0.0.0.0:2379
+      - --advertise-client-urls
+      - http://0.0.0.0:2379
+      - --listen-peer-urls
+      - http://0.0.0.0:2380
+      - --initial-advertise-peer-urls
+      - http://0.0.0.0:2380
+      - --initial-cluster
+      - rdnsdb=http://0.0.0.0:2380
+      - --initial-cluster-token
+      - rdnsdb-tkn
+      - --initial-cluster-state
+      - new
+
+  rdns-server:
+    depends_on:
+      - etcd
+    image: rancher/rdns-server:v0.5.8-rancher-amd64
+    network_mode: host
+    restart: always
+    volumes:
+      - ./config:/etc/rdns/config
+    environment:
+      - ETCD_ENDPOINTS=http://0.0.0.0:2379
+      - ETCD_PREFIX_PATH=/rdnsv3
+      - ETCD_LEASE_TIME=240h
+      - CORE_DNS_FILE=/etc/rdns/config/Corefile
+      - CORE_DNS_PORT=53
+      - CORE_DNS_CPU=50%
+      - CORE_DNS_DB_FILE
+      - CORE_DNS_DB_ZONE
+      - DOMAIN=kind.cluster
+      - TTL=60
+    logging:
+      driver: json-file
+      options:
+        max-file: "2"
+        max-size: 25m
+    command:
+      - rdns-server
+      - etcdv3
