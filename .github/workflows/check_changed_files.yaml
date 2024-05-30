@@ -1,9 +1,15 @@
 name: CI
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
+    inputs:
+      arc_name:
+        description: "Target ARC name used for `runs-on` in job"
+        required: true
+        default: self-hosted
+  # push:
+  #   branches:
+  #     - main
 
 jobs:
   # -------------------------------------------------------------
