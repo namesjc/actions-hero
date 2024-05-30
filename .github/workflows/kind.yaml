@@ -58,6 +58,10 @@ jobs:
           kubectl rollout status deployment/nginx -n default
           kubectl get pods -n default
 
+      - name: Sleep for 2 minutes
+        run: sleep 120s
+        shell: bash
+
       - name: Test app
         run: |
           curl https://nginx.kind.cluster
