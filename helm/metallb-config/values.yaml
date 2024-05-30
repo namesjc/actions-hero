@@ -1,0 +1,3 @@
+# IPAddressPool range for the Metallb subnet
+IPAddressPool:
+  Range: 172.18.255.200-172.18.255.250
