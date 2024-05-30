@@ -54,9 +54,9 @@ jobs:
 
       - name: Deploy nginx
         run: |
-          kubectl apply ./k8s/deployment/nginx.yaml
+          kubectl apply -f ./k8s/deployment/nginx.yaml
 
-      - name: Sleep
+      - name: Test app
         run: |
-          sleep 10000
+          curl https://nginx.kind.cluster
 
