@@ -13,7 +13,7 @@ jobs:
     runs-on: ${{ inputs.arc_name }}
     strategy:
       matrix:
-        k8s-version: ["v1.29.0"]
+        k8s-version: ["v1.27.0"]
 
     steps:
       - uses: actions/checkout@v4
@@ -39,8 +39,24 @@ jobs:
           kubectl wait --for=condition=Ready nodes --all --timeout=5m
           kubectl get nodes -o wide
 
-      - name: Install Nginx ingress
-        run: ./scripts/kind-add-ingress-nginx.sh
+      # - name: Install Nginx ingress
+      #   run: ./scripts/kind-add-ingress-nginx.sh
 
-      - name: Install MetalLB
-        run: ./scripts/kind-add-metallb.sh
+      # - name: Install MetalLB
+      #   run: ./scripts/kind-add-metallb.sh
+
+      - name: Create infra on kind
+        run: |
+          make prepare-cluster
+
+      - name: Install Externa DNS
+        run: ./scripts/kind-add-external-dns.sh
+
+      - name: Deploy nginx
+        run: |
+          kubectl apply ./k8s/deployment/nginx.yaml
+
+      - name: Sleep
+        run: |
+          sleep 10000
+

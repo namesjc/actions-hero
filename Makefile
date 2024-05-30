@@ -64,13 +64,13 @@ help:
 	@grep '^.PHONY: .* #' Makefile | sed 's/\.PHONY: \(.*\) # \(.*\)/\1	\2/' | expand -t30
 
 .PHONY: prepare-cluster # create-kind deploy-metallb configure-metallb deploy-ingress-nginx deploy-cert-manager
-prepare-cluster: create-kind deploy-metallb configure-metallb deploy-ingress-nginx deploy-cert-manager configure-cert-manager deploy-mssql
+prepare-cluster: deploy-metallb configure-metallb deploy-ingress-nginx deploy-cert-manager configure-cert-manager
 
 .PHONY: create-kind # Create kind cluster
 create-kind:
 	@echo $$(date --iso=seconds) "Creating kind cluster"
 	$(KIND_CMD_CONFIG) create cluster \
-        --config ./config.yaml \
+        --config ./k8s/kind-config.yaml \
 		--name $(KIND_CLUSTER_NAME) \
 		--image $(KIND_NODE_IMAGE_NAME)
 

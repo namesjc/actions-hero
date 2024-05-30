@@ -45,12 +45,11 @@ metadata:
     app: nginx
   name: nginx
   annotations:
-    external-dns.alpha.kubernetes.io/target: "172.18.255.200"
     cert-manager.io/cluster-issuer: trust-anchor
 spec:
   ingressClassName: nginx
   rules:
-    - host: nginx.lb.rancher.cloud
+    - host: nginx.kind.cluster
       http:
         paths:
           - backend:
@@ -62,4 +61,4 @@ spec:
   tls:
     - secretName: nginx-tls-certificate
       hosts:
-        - nginx.lb.rancher.cloud
+        - nginx.kind.cluster

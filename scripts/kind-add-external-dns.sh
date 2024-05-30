@@ -8,11 +8,12 @@ helm repo update
 
 cat > external-dns-values.yaml <<EOF
 provider: rdns
+policy: sync
 env:
   - name: ETCD_URLS
     value: "http://192.168.2.195:2379"
   - name: RDNS_ROOT_DOMAIN
-    value: lb.rancher.cloud
+    value: kind.cluster
 EOF
 
 helm upgrade --install external-dns -n external-dns external-dns/external-dns --values external-dns-values.yaml
