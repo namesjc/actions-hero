@@ -1,7 +1,0 @@
-provider: rdns
-policy: sync
-env:
-  - name: ETCD_URLS
-    value: "http://192.168.2.195:2379"
-  - name: RDNS_ROOT_DOMAIN
-    value: kind.cluster
