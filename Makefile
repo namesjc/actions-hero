@@ -51,6 +51,14 @@ CERT_MANAGER_RELEASE_VERSION ?= v1.11.0
 CERT_MANAGER_RELEASE_NAME = cert-manager
 CERT_MANAGER_NAMESPACE_NAME = cert-manager
 
+# external-dns
+EXTERNAL_DNS_HELM_REPO_URL = https://kubernetes-sigs.github.io/external-dns
+EXTERNAL_DNS_HELM_REPO_NAME = external-dns
+EXTERNAL_DNS_HELM_CHART_NAME = external-dns
+EXTERNAL_DNS_RELEASE_VERSION ?= 1.14.4
+EXTERNAL_DNS_RELEASE_NAME = external-dns
+EXTERNAL_DNS_NAMESPACE_NAME = external-dns
+
 # here we go
 default: help
 
@@ -124,3 +132,13 @@ configure-cert-manager:
 	@echo $$(date --iso=seconds) "Configuring Cert Manager"
 	$(HELM_CMD_CONFIG) upgrade --install cert-manager-config $(HELM_CONFIG_DIR)/cert-manager-config \
 		-n $(CERT_MANAGER_NAMESPACE_NAME)
+
+.PHONY: configure-external-dns # Configure External DNS
+configure-external-dns:
+	@echo $$(date --iso=seconds) "Configuring External DNS"
+	$(HELM_CMD_CONFIG) upgrade --install $(EXTERNAL_DNS_RELEASE_NAME) $(HELM_CONFIG_DIR)/external-dns \
+		--namespace $(EXTERNAL_DNS_NAMESPACE_NAME) \
+		--values $(HELM_CONFIG_DIR)/custom_values.yaml \
+		--create-namespace \
+		--wait \
+		--timeout=5m
