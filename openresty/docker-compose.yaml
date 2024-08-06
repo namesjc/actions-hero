@@ -1,0 +1,14 @@
+services:
+  nginx:
+    build: .
+    ports:
+      - 443:443
+    volumes:
+      - ./config/nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./certs:/etc/nginx/ssl
+    networks:
+      - kind
+
+networks:
+  kind:
+    external: true
