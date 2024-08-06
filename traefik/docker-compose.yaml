@@ -1,0 +1,35 @@
+networks:
+  socket_proxy:
+    # external: true
+  kind:
+    external: true
+  keycloak:
+    # external: true
+
+########################### SECRETS
+secrets:
+  basic_auth_credentials:
+    file: $DOCKERDIR/secrets/basic_auth_credentials
+  cf_dns_api_token:
+    file: $DOCKERDIR/secrets/cf_dns_api_token
+  # postgres_password:
+  #   file: $DOCKERDIR/secrets/postgres_password
+  # keycloak_password:
+  #   file: $DOCKERDIR/secrets/keycloak_password
+
+include:
+  # CORE
+  - $DOCKERDIR/compose/traefik.yaml
+  - $DOCKERDIR/compose/socket-proxy.yaml
+  # - $DOCKERDIR/compose/keycloak.yaml
+  - $DOCKERDIR/compose/portainer.yaml
+  # SECURITY
+  # - compose/$HOSTNAME/crowdsec.yml
+  # - compose/$HOSTNAME/traefik-bouncer.yml
+  # FRONTEND
+  # - $DOCKERDIR/compose/whoami.yaml
+  # MONITORING
+  # - compose/$HOSTNAME/grafana.yml
+  # - compose/$HOSTNAME/uptime-kuma.yml
+  # - $DOCKERDIR/compose/dozzle.yaml
+  # - compose/$HOSTNAME/scrutiny.yml
