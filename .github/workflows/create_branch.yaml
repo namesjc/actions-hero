@@ -1,5 +1,5 @@
 # .github/workflows/create-branch.yml
-name: Create Branch and PR via Script (with PAT)
+name: Create Branch, Commit Changes, and PR via Script (with PAT)
 
 # Controls when the workflow will run
 on:
@@ -13,6 +13,10 @@ on:
         description: "Branch to base the new branch on AND target for the PR"
         required: true
         default: "main" # Or your default branch
+      commit_message:
+        description: "Commit message for the automated change"
+        required: false
+        default: "feat: Add placeholder file"
       pr_title:
         description: "Title for the Pull Request"
         required: false # Optional, provide a default
@@ -22,38 +26,37 @@ on:
         required: false # Optional
         default: "Pull request automatically created by workflow."
       my_pat:
-        description: "Personal Access Token (PAT) for authentication"
-        required: true # Required for authentication
+        description: "GitHub Personal Access Token (PAT) with repo scope"
+        required: true
+        default: "" # Leave empty, will be set in the workflow
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  create_branch_and_pr_job: # Renamed job for clarity
+  create_branch_commit_pr_job: # Renamed job for clarity
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
 
     # Permissions for the default GITHUB_TOKEN (might still be needed for checkout or other actions)
     permissions:
-      contents: write # Needed to create branches
-      pull-requests: write # Needed if using GITHUB_TOKEN for PRs, good practice even with PAT
+      contents: write # Needed to create branches and push commits
+      pull-requests: write # Needed to create PRs
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Step 1: Use the github-script action to create the branch, passing the PAT
       - name: Create new branch
-        id: create_branch # Added an id to reference outputs if needed later
+        id: create_branch
         uses: actions/github-script@v7
         with:
-          github-token: ${{ inputs.my_pat }}
+          github-token: ${{ inputs.my_pat }} # Use the PAT provided in the workflow dispatch
           script: |
             // Get inputs from the workflow_dispatch event
-            const newBranch = '${{ inputs.new_branch_name }}';
-            const baseBranch = '${{ inputs.base_branch_name }}';
-            const ref = `refs/heads/${newBranch}`; // Format the ref string
+            const newBranch = '${{ github.event.inputs.new_branch_name }}';
+            const baseBranch = '${{ github.event.inputs.base_branch_name }}';
+            const ref = `refs/heads/${newBranch}`;
 
             console.log(`Attempting to create branch '${newBranch}' from '${baseBranch}' using PAT authentication...`);
-
             try {
-              // 1. Get the SHA of the latest commit on the base branch
               console.log(`Fetching SHA for base branch '${baseBranch}'...`);
               const { data: baseBranchRef } = await github.rest.git.getRef({
                 owner: context.repo.owner,
@@ -63,7 +66,6 @@ jobs:
               const baseSha = baseBranchRef.object.sha;
               console.log(`Base SHA for '${baseBranch}' is '${baseSha}'.`);
 
-              // 2. Create the new branch (ref) pointing to the base branch's SHA
               console.log(`Creating ref '${ref}' pointing to SHA '${baseSha}'...`);
               await github.rest.git.createRef({
                 owner: context.repo.owner,
@@ -71,56 +73,86 @@ jobs:
                 ref: ref,
                 sha: baseSha,
               });
-
-              console.log(`Successfully created branch '${newBranch}' pointing to SHA '${baseSha}'.`);
-              // Output the branch name for the next step
+              console.log(`Successfully created branch '${newBranch}'.`);
               core.setOutput("new_branch_name_output", newBranch);
-
             } catch (error) {
               console.error(`Error creating branch: ${error.message}`);
               if (error.status === 422) {
-                core.setFailed(`Failed to create branch '${newBranch}'. It might already exist. Full error: ${error}`);
+                core.setFailed(`Failed to create branch '${newBranch}'. It might already exist. Error: ${error}`);
               } else {
                 core.setFailed(`Failed to create branch '${newBranch}'. Error: ${error}`);
               }
             }
 
-      # Step 2: Create a Pull Request from the new branch
-      - name: Create Pull Request
-        # Only run this step if the previous step succeeded
+      # Step 2: Checkout the newly created branch
+      # Only run if the previous step succeeded and produced the branch name output
+      - name: Checkout new branch
         if: success() && steps.create_branch.outputs.new_branch_name_output
+        uses: actions/checkout@v4
+        with:
+          # Use the branch name output from the previous step
+          ref: ${{ steps.create_branch.outputs.new_branch_name_output }}
+          # Fetch depth 0 to get all history, might be needed for some git operations,
+          # though not strictly necessary for just adding a commit. Can use 1 for efficiency.
+          fetch-depth: 1
+
+      # Step 3: Create changes, commit, and push
+      - name: Create commit
+        # Only run if checkout succeeded
+        if: success()
+        run: |
+          echo "Adding a new line generated by workflow at $(date)" >> README.md
+          # Or create a new file:
+          # echo "This file was created by the workflow" > generated-file-${{ github.run_id }}.txt
+
+          # Configure Git
+          # Use the GitHub Actions bot user as the committer
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Commit the changes
+          git add . # Add all changes
+          git commit -m "${{ github.event.inputs.commit_message }}" # Use input for commit message
+
+          # Push the changes back to the new branch
+          # The checkout action configures authentication, so push should work directly
+          git push origin ${{ steps.create_branch.outputs.new_branch_name_output }}
+
+          echo "Changes committed and pushed to ${{ steps.create_branch.outputs.new_branch_name_output }}"
+
+      # Step 4: Create a Pull Request from the new branch
+      - name: Create Pull Request
+        # Only run this step if the commit step succeeded (implies branch creation and checkout also succeeded)
+        if: success()
         uses: actions/github-script@v7
         with:
           github-token: ${{ inputs.my_pat }}
           script: |
             // Get inputs needed for the PR
-            const newBranch = '${{ steps.create_branch.outputs.new_branch_name_output }}'; // Use output from previous step
-            const baseBranch = '${{ inputs.base_branch_name }}';
-            const prTitle = '${{ inputs.pr_title }}' || `WIP: ${newBranch}`; // Use input or default title
-            const prBody = '${{ inputs.pr_body }}' || `This PR was auto-generated for branch ${newBranch}.`; // Use input or default body
+            const newBranch = '${{ steps.create_branch.outputs.new_branch_name_output }}'; // Use output from first step
+            const baseBranch = '${{ github.event.inputs.base_branch_name }}';
+            const prTitle = '${{ github.event.inputs.pr_title }}' || `WIP: ${newBranch}`;
+            const prBody = '${{ github.event.inputs.pr_body }}' || `This PR was auto-generated for branch ${newBranch} and includes automated changes.`;
 
             console.log(`Attempting to create Pull Request for branch '${newBranch}' targeting '${baseBranch}'...`);
-
             try {
-              // Use octokit to create the pull request
               const { data: pullRequest } = await github.rest.pulls.create({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 title: prTitle,
-                head: newBranch, // The branch to merge (source)
-                base: baseBranch, // The branch to merge into (target)
+                head: newBranch,
+                base: baseBranch,
                 body: prBody,
-                draft: false // Set to true to create a draft PR
+                draft: false
               });
-
               console.log(`Successfully created Pull Request #${pullRequest.number}: ${pullRequest.html_url}`);
-              core.setOutput("pr_url", pullRequest.html_url); // Optional: output the PR URL
-
+              core.setOutput("pr_url", pullRequest.html_url);
             } catch (error) {
               console.error(`Error creating Pull Request: ${error.message}`);
-              // Common error: A pull request already exists for <owner>:<branch>.
               if (error.message.includes("A pull request already exists")) {
                  core.warning(`Could not create PR for branch '${newBranch}'. It likely already exists.`);
+              } else if (error.message.includes("No commits between")) {
+                 core.warning(`Could not create PR for branch '${newBranch}'. There might be no commits between it and the base branch '${baseBranch}'. This can happen if the commit step failed silently or the branch is identical to base.`);
               } else {
                  core.setFailed(`Failed to create Pull Request for branch '${newBranch}'. Error: ${error}`);
               }
