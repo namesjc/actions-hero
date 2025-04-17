@@ -1,50 +1,51 @@
 # .github/workflows/create-branch.yml
-name: Create Branch via Script (with PAT)
+name: Create Branch and PR via Script (with PAT)
 
 # Controls when the workflow will run
 on:
   workflow_dispatch: # Allows manual triggering
     inputs:
       new_branch_name:
-        description: "Name for the new branch"
+        description: "Name for the new branch (e.g., feature/my-new-feature)"
         required: true
         default: "feature/new-branch"
       base_branch_name:
-        description: "Branch to base the new branch on"
+        description: "Branch to base the new branch on AND target for the PR"
         required: true
         default: "main" # Or your default branch
-      my_token:
-        description: "GitHub Personal Access Token (PAT)"
-        required: true
+      pr_title:
+        description: "Title for the Pull Request"
+        required: false # Optional, provide a default
+        default: "New Feature Branch"
+      pr_body:
+        description: "Body/description for the Pull Request"
+        required: false # Optional
+        default: "Pull request automatically created by workflow."
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  create_branch_job:
+  create_branch_and_pr_job: # Renamed job for clarity
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
 
-    # Permissions are no longer strictly required here IF the PAT has sufficient scope,
-    # but keeping contents: write might be needed for other steps or as a fallback
-    # if the PAT method has issues. It doesn't hurt to leave it.
+    # Permissions for the default GITHUB_TOKEN (might still be needed for checkout or other actions)
     permissions:
-      contents: write
+      contents: write # Needed to create branches
+      pull-requests: write # Needed if using GITHUB_TOKEN for PRs, good practice even with PAT
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Step 1: Use the github-script action, passing the PAT
+      # Step 1: Use the github-script action to create the branch, passing the PAT
       - name: Create new branch
+        id: create_branch # Added an id to reference outputs if needed later
         uses: actions/github-script@v7
         with:
-          # Explicitly tell github-script to use the provided token for its octokit instance
-          github-token: ${{ inputs.my_token }}
+          github-token: ${{ env.GITHUB_TOKEN }}
           script: |
             // Get inputs from the workflow_dispatch event
             const newBranch = '${{ inputs.new_branch_name }}';
             const baseBranch = '${{ inputs.base_branch_name }}';
             const ref = `refs/heads/${newBranch}`; // Format the ref string
-
-            // The 'github' object provided here is now authenticated using the PAT
-            // passed via 'github-token'
 
             console.log(`Attempting to create branch '${newBranch}' from '${baseBranch}' using PAT authentication...`);
 
@@ -54,7 +55,7 @@ jobs:
               const { data: baseBranchRef } = await github.rest.git.getRef({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                ref: `heads/${baseBranch}`, // Ensure we specify it's a branch head
+                ref: `heads/${baseBranch}`,
               });
               const baseSha = baseBranchRef.object.sha;
               console.log(`Base SHA for '${baseBranch}' is '${baseSha}'.`);
@@ -64,19 +65,60 @@ jobs:
               await github.rest.git.createRef({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                ref: ref, // The new ref (e.g., refs/heads/feature/new-branch)
-                sha: baseSha, // The SHA the new ref should point to
+                ref: ref,
+                sha: baseSha,
               });
 
               console.log(`Successfully created branch '${newBranch}' pointing to SHA '${baseSha}'.`);
-              core.setOutput("new_branch_ref", ref); // Optional: output the ref name
+              // Output the branch name for the next step
+              core.setOutput("new_branch_name_output", newBranch);
 
             } catch (error) {
               console.error(`Error creating branch: ${error.message}`);
               if (error.status === 422) {
-                // 422 Unprocessable Entity often means the ref already exists
                 core.setFailed(`Failed to create branch '${newBranch}'. It might already exist. Full error: ${error}`);
               } else {
                 core.setFailed(`Failed to create branch '${newBranch}'. Error: ${error}`);
+              }
+            }
+
+      # Step 2: Create a Pull Request from the new branch
+      - name: Create Pull Request
+        # Only run this step if the previous step succeeded
+        if: success() && steps.create_branch.outputs.new_branch_name_output
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ env.GITHUB_TOKEN }}
+          script: |
+            // Get inputs needed for the PR
+            const newBranch = '${{ steps.create_branch.outputs.new_branch_name_output }}'; // Use output from previous step
+            const baseBranch = '${{ inputs.base_branch_name }}';
+            const prTitle = '${{ inputs.pr_title }}' || `WIP: ${newBranch}`; // Use input or default title
+            const prBody = '${{ inputs.pr_body }}' || `This PR was auto-generated for branch ${newBranch}.`; // Use input or default body
+
+            console.log(`Attempting to create Pull Request for branch '${newBranch}' targeting '${baseBranch}'...`);
+
+            try {
+              // Use octokit to create the pull request
+              const { data: pullRequest } = await github.rest.pulls.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: prTitle,
+                head: newBranch, // The branch to merge (source)
+                base: baseBranch, // The branch to merge into (target)
+                body: prBody,
+                draft: false // Set to true to create a draft PR
+              });
+
+              console.log(`Successfully created Pull Request #${pullRequest.number}: ${pullRequest.html_url}`);
+              core.setOutput("pr_url", pullRequest.html_url); // Optional: output the PR URL
+
+            } catch (error) {
+              console.error(`Error creating Pull Request: ${error.message}`);
+              // Common error: A pull request already exists for <owner>:<branch>.
+              if (error.message.includes("A pull request already exists")) {
+                 core.warning(`Could not create PR for branch '${newBranch}'. It likely already exists.`);
+              } else {
+                 core.setFailed(`Failed to create Pull Request for branch '${newBranch}'. Error: ${error}`);
               }
             }
