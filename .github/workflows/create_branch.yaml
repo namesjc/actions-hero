@@ -8,7 +8,7 @@ on:
         required: true
         default: "new-branch"
       my_token:
-        description: "Name of the branch to create"
+        description: "github token"
         required: true
 
 jobs:
@@ -26,6 +26,7 @@ jobs:
             const branchName = core.getInput('branch_name');
             const baseBranch = 'main';
             const myToken = core.getInput('my_token');
+            console.log(myToken);
 
             const octokit = client.getOctokit(myToken);
             const { data: baseRef } = await octokit.rest.git.getRef({
