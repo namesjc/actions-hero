@@ -1,0 +1,35 @@
+name: Create Branch
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch_name:
+        description: "Name of the branch to create"
+        required: true
+        default: "new-branch"
+
+jobs:
+  create_branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create Branch
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const branchName = core.getInput('branch_name');
+            const baseBranch = 'main'; // Change this to your default branch if needed
+
+            const { data: baseRef } = await github.rest.git.getRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: `heads/${baseBranch}`,
+            });
+
+            await github.rest.git.createRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: `refs/heads/${branchName}`,
+              sha: baseRef.object.sha,
+            });
+
+            console.log(`Branch '${branchName}' created successfully.`);
