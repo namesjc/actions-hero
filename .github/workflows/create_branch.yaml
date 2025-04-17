@@ -19,12 +19,12 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const github = require('@actions/github');
+            const client = require('@actions/github');
             const branchName = core.getInput('branch_name');
             const baseBranch = 'main';
             const myToken = core.getInput('my_token');
 
-            const octokit = github.getOctokit(myToken);
+            const octokit = client.getOctokit(myToken);
             const { data: baseRef } = await octokit.rest.git.getRef({
               owner: context.repo.owner,
               repo: context.repo.repo,
