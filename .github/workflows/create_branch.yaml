@@ -128,39 +128,41 @@ jobs:
         with:
           github-token: ${{ inputs.my_pat }}
           script: |
-            // Get inputs needed for the PR
-            const newBranch = '${{ steps.create_branch.outputs.new_branch_name_output }}'; // Use output from first step
+            const newBranch = '${{ steps.create_branch.outputs.new_branch_name_output }}';
             const baseBranch = '${{ github.event.inputs.base_branch_name }}';
             const runNumber = process.env.GITHUB_RUN_NUMBER;
-            const githubUrl = process.env.GITHUB_SERVER_URL
-            const prTitle = `Version Picker changes: Run#${runNumber}` || `WIP: ${newBranch}`;
-            const prBody = [
-              "Version Picker changes:",
-              `GITHUB_RUN_NUMBER: [${runNumber} - Overview](${githubUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`,
-              `GITHUB_RUN_ID: ${context.runId}`,
-              `Date: ${new Date().toISOString().replace('T', ' ').slice(0, 19)}`
-            ].join("\n");
+            const githubUrl = process.env.GITHUB_SERVER_URL;
+            const prTitle = `Version Picker changes: Run#${runNumber}`;
+            const prBody = `
+              Version Picker changes:
+              GITHUB_RUN_NUMBER: [${runNumber} - Overview](${githubUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
+              GITHUB_RUN_ID: ${context.runId}
+              Date: ${new Date().toISOString().replace('T', ' ').slice(0, 19)}
+            `.trim();
 
-            console.log(`Attempting to create Pull Request for branch '${newBranch}' targeting '${baseBranch}'...`);
+            console.log(`Creating Pull Request for branch '${newBranch}' targeting '${baseBranch}'...`);
+
             try {
               const { data: pullRequest } = await github.rest.pulls.create({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                title: prTitle,
-                head: newBranch,
-                base: baseBranch,
-                body: prBody,
-                draft: false
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: prTitle,
+              head: newBranch,
+              base: baseBranch,
+              body: prBody,
+              draft: false,
               });
-              console.log(`Successfully created Pull Request #${pullRequest.number}: ${pullRequest.html_url}`);
+
+              console.log(`Pull Request created: #${pullRequest.number} - ${pullRequest.html_url}`);
               core.setOutput("pr_url", pullRequest.html_url);
             } catch (error) {
-              console.error(`Error creating Pull Request: ${error.message}`);
+              console.error(`Failed to create Pull Request: ${error.message}`);
+
               if (error.message.includes("A pull request already exists")) {
-                 core.warning(`Could not create PR for branch '${newBranch}'. It likely already exists.`);
+              core.warning(`PR already exists for branch '${newBranch}'.`);
               } else if (error.message.includes("No commits between")) {
-                 core.warning(`Could not create PR for branch '${newBranch}'. There might be no commits between it and the base branch '${baseBranch}'. This can happen if the commit step failed silently or the branch is identical to base.`);
+              core.warning(`No commits between '${newBranch}' and '${baseBranch}'.`);
               } else {
-                 core.setFailed(`Failed to create Pull Request for branch '${newBranch}'. Error: ${error}`);
+              core.setFailed(`Error creating Pull Request: ${error.message}`);
               }
             }
