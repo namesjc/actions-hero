@@ -74,15 +74,15 @@ jobs:
               console.log(`Branch '${newBranch}' created successfully.`);
 
               // Update summary and outputs
-              core.summary..addHeading('Test', 3).addRaw('* Some content here :speech_balloon:', true).addEOL();
+              core.summary.addHeading('Test', 3).addRaw('* Some content here :speech_balloon:', true).addEOL();
 
               core.summary
               .addHeading('Branch Creation', 3)
               .addRaw(`\n`)
-              .addRaw(`* Successfully created branch: `)
+              .addRaw(`Successfully created branch: `)
               .addLink(`${newBranch}`, `${branchUrl}`)
               .addRaw(`\n`)
-              .addRaw(`* Base Branch: \`${baseBranch}\`\n`)
+              .addRaw(`Base Branch: \`${baseBranch}\`\n`)
               .addSeparator();
               await core.summary.write({ overwrite: false });
 
