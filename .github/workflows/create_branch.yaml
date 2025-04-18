@@ -51,48 +51,52 @@ jobs:
             const repoUrl = context.payload.repository.html_url;
             const ref = `refs/heads/${newBranch}`;
 
-            console.log(`Attempting to create branch '${newBranch}' from '${baseBranch}' using PAT authentication...`);
+            console.log(`Creating branch '${newBranch}' from '${baseBranch}'...`);
+
             try {
-              console.log(`Fetching SHA for base branch '${baseBranch}'...`);
+              // Fetch the SHA of the base branch
               const { data: baseBranchRef } = await github.rest.git.getRef({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                ref: `heads/${baseBranch}`,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: `heads/${baseBranch}`,
               });
               const baseSha = baseBranchRef.object.sha;
-              console.log(`Base SHA for '${baseBranch}' is '${baseSha}'.`);
 
-              console.log(`Creating ref '${ref}' pointing to SHA '${baseSha}'...`);
+              // Create the new branch
               await github.rest.git.createRef({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                ref: ref,
-                sha: baseSha,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: ref,
+              sha: baseSha,
               });
-              const branchUrl = `${repoUrl}/tree/${newBranch}`;
-              const successMsg = `Successfully created branch: [${newBranch}](${branchUrl})`;
-              console.log(successMsg);
 
-              core.summary.addHeading('Branch Creation', 2);
-              core.summary.addRaw(`* ${successMsg}\n`, true);
-              core.summary.addRaw(`* Base Branch: \`${baseBranch}\`\n`);
-              core.summary.addSeparator();
+              const branchUrl = `${repoUrl}/tree/${newBranch}`;
+              console.log(`Branch '${newBranch}' created successfully.`);
+
+              // Update summary and outputs
+              core.summary
+              .addHeading('Branch Creation', 2)
+              .addRaw(`* ✅ Successfully created branch: [${newBranch}](${branchUrl})\n`, true)
+              .addRaw(`* Base Branch: \`${baseBranch}\`\n`)
+              .addSeparator();
               await core.summary.write({ overwrite: false });
 
               core.setOutput("new_branch_name_output", newBranch);
             } catch (error) {
-              console.error(`Error creating branch: ${error.message}`);
-              const errorMsg = `Failed to create branch '${newBranch}'.`;
+              console.error(`Failed to create branch: ${error.message}`);
 
-              core.summary.addHeading('Branch Creation', 3);
-              core.summary.addRaw(`❌ ${errorMsg} Error: ${error.message}`);
-              core.summary.addSeparator();
-              await core.summary.write({ overwrite: false });
+              // Update summary with error details
+              core.summary
+              .addHeading('Branch Creation', 2)
+              .addRaw(`* ❌ Failed to create branch '${newBranch}'. Error: ${error.message}\n`)
+              .addSeparator();
+              await core.summary.write();
 
+              // Handle specific error cases
               if (error.status === 422) {
-                core.setFailed(`Failed to create branch '${newBranch}'. It might already exist. Error: ${error}`);
+              core.setFailed(`Branch '${newBranch}' already exists. Error: ${error.message}`);
               } else {
-                core.setFailed(`Failed to create branch '${newBranch}'. Error: ${error}`);
+              core.setFailed(`Error creating branch '${newBranch}': ${error.message}`);
               }
             }
 
@@ -130,32 +134,28 @@ jobs:
           fi
 
       - name: Update Summary with Commit Info
-        if: always() && steps.create_branch.outcome != 'failure'
+        if: success()
         uses: actions/github-script@v7
         with:
           script: |
             const commitSha = '${{ steps.create_commit.outputs.commit_sha }}';
-            if (!commitSha) {
-               console.log('Commit step did not produce output (likely skipped or failed early).');
-               return;
-            }
-
             const branchName = '${{ steps.create_branch.outputs.new_branch_name_output }}';
             const repoUrl = context.payload.repository.html_url;
 
-            core.summary.addHeading('Commit Details', 3);
+            core.summary.addHeading('Commit Details', 2);
 
-            if (commitSha && commitSha !== 'NONE') {
-              const commitUrl = `${repoUrl}/commit/${commitSha}`;
-              core.summary.addRaw(`✅ Commit `)
-                        .addLink(commitSha.substring(0,7), commitUrl)
-                        .addRaw(` pushed to branch \`${branchName}\`.\n`);
-            } else if (commitSha === 'NONE') {
-              core.summary.addRaw(`ℹ️ No file changes detected; no commit was created on branch \`${branchName}\`.\n`);
+            if (!commitSha || commitSha === 'NONE') {
+              const message = commitSha === 'NONE'
+              ? `* ℹ️ No file changes detected; no commit was created on branch \`${branchName}\`.\n`
+              : `* ❌ Failed to get commit details for branch \`${branchName}\` (Step likely failed).\n`;
+              core.summary.addRaw(message);
             } else {
-              // This case implies the commit step failed before producing output - handled by the initial check
-               core.summary.addRaw(`* ❌ Failed to get commit details for branch \`${branchName}\` (Step likely failed).\n`);
+              const commitUrl = `${repoUrl}/commit/${commitSha}`;
+              core.summary.addRaw(`* ✅ Commit `)
+                  .addLink(commitSha.substring(0, 7), commitUrl)
+                  .addRaw(` pushed to branch \`${branchName}\`.\n`);
             }
+
             core.summary.addSeparator();
             await core.summary.write({ overwrite: false });
 
@@ -172,9 +172,9 @@ jobs:
             const prTitle = `Version Picker changes: Run#${runNumber}`;
             const prBody = `
               Version Picker changes:
-              GITHUB_RUN_NUMBER: [${runNumber} - Overview](${githubUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
-              GITHUB_RUN_ID: ${context.runId}
-              Date: ${new Date().toISOString().replace('T', ' ').slice(0, 19)}
+              - **Run Number**: [${runNumber} - Overview](${githubUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
+              - **Run ID**: ${context.runId}
+              - **Date**: ${new Date().toISOString().replace('T', ' ').slice(0, 19)}
             `.trim();
 
             console.log(`Creating Pull Request for branch '${newBranch}' targeting '${baseBranch}'...`);
@@ -190,38 +190,41 @@ jobs:
               draft: false,
               });
 
-              prUrl = pullRequest.html_url;
-              prNumber = pullRequest.number;
-              const successMsg = `Successfully created Pull Request [#${prNumber}](${prUrl})`;
-              console.log(successMsg);
+              const prUrl = pullRequest.html_url;
+              const prNumber = pullRequest.number;
+
+              console.log(`Successfully created Pull Request #${prNumber}: ${prUrl}`);
               core.setOutput("pr_url", prUrl);
               core.setOutput("pr_number", prNumber);
 
-              core.summary.addHeading('Pull Request Creation', 3);
-              core.summary.addRaw(`* Successfully created Pull Request `)
-                        .addLink(`#${prNumber}`, prUrl)
-                        .addRaw(`\n`);
-              core.summary.addRaw(`* Target Branch: \`${baseBranch}\``);
-              core.summary.addSeparator();
+              core.summary
+              .addHeading('Pull Request Creation', 2)
+              .addRaw(`* ✅ Successfully created Pull Request `)
+              .addLink(`#${prNumber}`, prUrl)
+              .addRaw(`\n`)
+              .addRaw(`* Target Branch: \`${baseBranch}\`\n`)
+              .addSeparator();
               await core.summary.write({ overwrite: false });
 
             } catch (error) {
               console.error(`Failed to create Pull Request: ${error.message}`);
+
               const errorMsg = `Failed to create Pull Request for branch '${newBranch}' targeting '${baseBranch}'.`;
-
-              core.summary.addHeading('Pull Request Creation', 3);
-              core.summary.addRaw(`❌ ${errorMsg} Error: ${error.message}\n`);
-              if (error.message.includes("A pull request already exists")) {
-                 summaryContent += `ℹ️ An active pull request likely already exists for this branch.\n`;
-              }
-              core.summary.addSeparator();
-              await core.summary.write({ overwrite: false });
+              core.summary
+              .addHeading('Pull Request Creation', 3)
+              .addRaw(`❌ ${errorMsg}\n`)
+              .addRaw(`Error: ${error.message}\n`);
 
               if (error.message.includes("A pull request already exists")) {
+              core.summary.addRaw(`* ℹ️ An active pull request likely already exists for this branch.\n`);
               core.warning(`PR already exists for branch '${newBranch}'.`);
               } else if (error.message.includes("No commits between")) {
+              core.summary.addRaw(`* ℹ️ No commits between '${newBranch}' and '${baseBranch}'.\n`);
               core.warning(`No commits between '${newBranch}' and '${baseBranch}'.`);
               } else {
               core.setFailed(`Error creating Pull Request: ${error.message}`);
               }
+
+              core.summary.addSeparator();
+              await core.summary.write({ overwrite: false });
             }
