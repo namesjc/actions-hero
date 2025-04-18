@@ -76,6 +76,7 @@ jobs:
               // Update summary and outputs
               core.summary
               .addHeading('Branch Creation', 3)
+              .addRaw(`\n`)
               .addRaw(`* Successfully created branch: `)
               .addLink(`${newBranch}`, `${branchUrl}`)
               .addRaw(`\n`)
