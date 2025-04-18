@@ -74,7 +74,7 @@ jobs:
               console.log(successMsg);
 
               core.summary.addHeading('Branch Creation', 3);
-              core.summary.addRaw(`* ✅ ${successMsg}`, true);
+              core.summary.addRaw(`* ${successMsg}\n`, true);
               core.summary.addRaw(`* Base Branch: \`${baseBranch}\``);
               core.summary.addSeparator();
               await core.summary.write({ overwrite: false });
@@ -198,7 +198,7 @@ jobs:
               core.setOutput("pr_number", prNumber);
 
               core.summary.addHeading('Pull Request Creation', 3);
-              core.summary.addRaw(`* ✅ Successfully created Pull Request `)
+              core.summary.addRaw(`* Successfully created Pull Request `)
                         .addLink(`#${prNumber}`, prUrl)
                         .addRaw(`\n`);
               core.summary.addRaw(`* Target Branch: \`${baseBranch}\``);
