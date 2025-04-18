@@ -155,12 +155,12 @@ jobs:
 
               console.log(`Pull Request created: #${pullRequest.number} - ${pullRequest.html_url}`);
               core.setOutput("pr_url", pullRequest.html_url);
-              core.summary
+                core.summary
                 .addHeading('Pull Request Details', 2)
-                .addRaw(`- **PR Number**: #${pullRequest.number}`)
-                .addRaw(`\n- **PR URL**: [${pullRequest.html_url}](${pullRequest.html_url})`)
-                .addRaw(`\n- **Branch**: ${newBranch}`)
-                .addRaw(`\n- **Base Branch**: ${baseBranch}`)
+                .addRaw(`- **PR Number**: #${pullRequest.number}\n`)
+                .addRaw(`- **PR URL**: [${pullRequest.html_url}](${pullRequest.html_url})\n`)
+                .addRaw(`- **Branch**: ${newBranch}\n`)
+                .addRaw(`- **Base Branch**: ${baseBranch}\n`)
                 .write();
             } catch (error) {
               console.error(`Failed to create Pull Request: ${error.message}`);
