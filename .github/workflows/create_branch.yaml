@@ -17,14 +17,14 @@ on:
         description: "Commit message for the automated change"
         required: false
         default: "feat: Add placeholder file"
-      pr_title:
-        description: "Title for the Pull Request"
-        required: false # Optional, provide a default
-        default: "New Feature Branch"
-      pr_body:
-        description: "Body/description for the Pull Request"
-        required: false # Optional
-        default: "Pull request automatically created by workflow."
+      # pr_title:
+      #   description: "Title for the Pull Request"
+      #   required: false # Optional, provide a default
+      #   default: "New Feature Branch"
+      # pr_body:
+      #   description: "Body/description for the Pull Request"
+      #   required: false # Optional
+      #   default: "Pull request automatically created by workflow."
       my_pat:
         description: "GitHub Personal Access Token (PAT) with repo scope"
         required: true
@@ -131,8 +131,14 @@ jobs:
             // Get inputs needed for the PR
             const newBranch = '${{ steps.create_branch.outputs.new_branch_name_output }}'; // Use output from first step
             const baseBranch = '${{ github.event.inputs.base_branch_name }}';
-            const prTitle = '${{ github.event.inputs.pr_title }}' || `WIP: ${newBranch}`;
-            const prBody = '${{ github.event.inputs.pr_body }}' || `This PR was auto-generated for branch ${newBranch} and includes automated changes.`;
+            const runNumber = process.env.GITHUB_RUN_NUMBER;
+            const prTitle = `Version Picker changes: Run#${runNumber}` || `WIP: ${newBranch}`;
+            const prBody = [
+              "Version Picker changes:",
+              `GITHUB_RUN_NUMBER: [${runNumber} - Overview](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`,
+              `GITHUB_RUN_ID: ${context.runId}`,
+              `Date: ${new Date().toISOString().replace('T', ' ').slice(0, 19)}`
+            ].join("\n");
 
             console.log(`Attempting to create Pull Request for branch '${newBranch}' targeting '${baseBranch}'...`);
             try {
