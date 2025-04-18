@@ -74,7 +74,7 @@ jobs:
               console.log(successMsg);
 
               core.summary.addHeading('Branch Creation', 3);
-              core.summary.addRaw(`✅ ${successMsg}`, true);
+              core.summary.addRaw(`### ✅ ${successMsg}`).addRaw(`\n`);
               core.summary.addRaw(`Base Branch: \`${baseBranch}\``);
               core.summary.addSeparator();
               await core.summary.write({ overwrite: false });
