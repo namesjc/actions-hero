@@ -77,7 +77,7 @@ jobs:
               core.summary
               .addHeading('Branch Creation', 3)
               .addRaw(`\n`)
-              .addRaw(`Successfully created branch: `)
+              .addRaw(`* ✅Successfully created branch: `)
               .addLink(`${newBranch}`, `${branchUrl}`)
               .addRaw(`\n`)
               .addRaw(`Base Branch: \`${baseBranch}\`\n`)
@@ -91,6 +91,7 @@ jobs:
               // Update summary with error details
               core.summary
               .addHeading('Branch Creation', 3)
+              .addRaw(`\n`)
               .addRaw(`* ❌ Failed to create branch '${newBranch}'. Error: ${error.message}\n`)
               .addSeparator();
               await core.summary.write();
@@ -155,7 +156,7 @@ jobs:
               core.summary.addRaw(message);
             } else {
               const commitUrl = `${repoUrl}/commit/${commitSha}`;
-              core.summary.addRaw(`Commit `)
+              core.summary.addRaw(`* Commit `)
                   .addLink(commitSha.substring(0, 7), commitUrl)
                   .addRaw(` pushed to branch \`${branchName}\`.\n`);
             }
