@@ -150,13 +150,13 @@ jobs:
 
             if (!commitSha || commitSha === 'NONE') {
               const message = commitSha === 'NONE'
-              ? `* ℹ️ No file changes detected; no commit was created on branch \`${branchName}\`.`
-              : `* ❌ Failed to get commit details for branch \`${branchName}\` (Step likely failed).`;
+              ? `* ℹ️ No file changes detected; no commit was created on branch \`${branchName}\``
+              : `* ❌ Failed to get commit details for branch \`${branchName}\` (Step likely failed)`;
               core.summary.addRaw(message, true);
             } else {
               const commitUrl = `${repoUrl}/commit/${commitSha}`;
-              core.summary.addRaw(`* ✅ Commit [${commitSha}.substring(0, 7)](${commitUrl})`)
-                  .addRaw(` pushed to branch \`${branchName}\`.`, true);
+              core.summary.addRaw(`* ✅ Commit [${commitSha.substring(0, 7)}](${commitUrl})`)
+                  .addRaw(` pushed to branch \`${branchName}\``, true);
             }
 
             core.summary.addSeparator();
