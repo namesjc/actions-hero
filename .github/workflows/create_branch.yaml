@@ -73,9 +73,9 @@ jobs:
               const successMsg = `Successfully created branch: [${newBranch}](${branchUrl})`;
               console.log(successMsg);
 
-              core.summary.addHeading('Branch Creation', 3);
+              core.summary.addHeading('Branch Creation', 2);
               core.summary.addRaw(`* ${successMsg}\n`, true);
-              core.summary.addRaw(`* Base Branch: \`${baseBranch}\``);
+              core.summary.addRaw(`* Base Branch: \`${baseBranch}\`\n`);
               core.summary.addSeparator();
               await core.summary.write({ overwrite: false });
 
