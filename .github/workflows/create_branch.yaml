@@ -76,7 +76,9 @@ jobs:
               // Update summary and outputs
               core.summary
               .addHeading('Branch Creation', 3)
-              .addRaw(`* ✅ Successfully created branch: [${newBranch}](${branchUrl})\n`)
+              .addRaw(`* Successfully created branch: `)
+              .addLink(`${newBranch}`, `${branchUrl}`)
+              .addRaw(`\n`)
               .addRaw(`* Base Branch: \`${baseBranch}\`\n`)
               .addSeparator();
               await core.summary.write({ overwrite: false });
@@ -147,12 +149,12 @@ jobs:
 
             if (!commitSha || commitSha === 'NONE') {
               const message = commitSha === 'NONE'
-              ? `* ℹ️ No file changes detected; no commit was created on branch \`${branchName}\`.\n`
-              : `* ❌ Failed to get commit details for branch \`${branchName}\` (Step likely failed).\n`;
+              ? `* No file changes detected; no commit was created on branch \`${branchName}\`.\n`
+              : `* Failed to get commit details for branch \`${branchName}\` (Step likely failed).\n`;
               core.summary.addRaw(message);
             } else {
               const commitUrl = `${repoUrl}/commit/${commitSha}`;
-              core.summary.addRaw(`* ✅ Commit `)
+              core.summary.addRaw(`* Commit `)
                   .addLink(commitSha.substring(0, 7), commitUrl)
                   .addRaw(` pushed to branch \`${branchName}\`.\n`);
             }
