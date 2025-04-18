@@ -155,9 +155,7 @@ jobs:
 
               console.log(`Pull Request created: #${pullRequest.number} - ${pullRequest.html_url}`);
               core.setOutput("pr_url", pullRequest.html_url);
-              core.summary
-                .addHeading('Pull Request Details', 2)
-                .addRaw(`### Pull Request: [${pullRequest.html_url}](${pullRequest.html_url})`, true)
+              core.summary.addHeading('Pull Request Details', 2).addRaw(`### Pull Request: [${pullRequest.html_url}](${pullRequest.html_url})`, true)
             } catch (error) {
               console.error(`Failed to create Pull Request: ${error.message}`);
 
