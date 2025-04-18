@@ -132,10 +132,11 @@ jobs:
             const newBranch = '${{ steps.create_branch.outputs.new_branch_name_output }}'; // Use output from first step
             const baseBranch = '${{ github.event.inputs.base_branch_name }}';
             const runNumber = process.env.GITHUB_RUN_NUMBER;
+            const githubUrl = process.env.GITHUB_SERVER_URL
             const prTitle = `Version Picker changes: Run#${runNumber}` || `WIP: ${newBranch}`;
             const prBody = [
               "Version Picker changes:",
-              `GITHUB_RUN_NUMBER: [${runNumber} - Overview](https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`,
+              `GITHUB_RUN_NUMBER: [${runNumber} - Overview](${githubUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})`,
               `GITHUB_RUN_ID: ${context.runId}`,
               `Date: ${new Date().toISOString().replace('T', ' ').slice(0, 19)}`
             ].join("\n");
