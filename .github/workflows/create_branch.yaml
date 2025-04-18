@@ -76,10 +76,11 @@ jobs:
               // Update summary and outputs
               core.summary
               .addHeading('Branch Creation', 3)
-              .addRaw(`* Successfully created branch: `)
+              .addRaw(`\n`)
+              .addRaw(`Successfully created branch: `)
               .addLink(`${newBranch}`, `${branchUrl}`)
               .addRaw(`\n`)
-              .addRaw(`* Base Branch: \`${baseBranch}\`\n`)
+              .addRaw(`Base Branch: \`${baseBranch}\`\n`)
               .addSeparator();
               await core.summary.write({ overwrite: false });
 
@@ -145,7 +146,7 @@ jobs:
             const branchName = '${{ steps.create_branch.outputs.new_branch_name_output }}';
             const repoUrl = context.payload.repository.html_url;
 
-            core.summary.addHeading('Commit Details', 3);
+            core.summary.addHeading('Commit Details', 3).addRaw('\n');
 
             if (!commitSha || commitSha === 'NONE') {
               const message = commitSha === 'NONE'
@@ -154,7 +155,7 @@ jobs:
               core.summary.addRaw(message);
             } else {
               const commitUrl = `${repoUrl}/commit/${commitSha}`;
-              core.summary.addRaw(`* Commit `)
+              core.summary.addRaw(`Commit `)
                   .addLink(commitSha.substring(0, 7), commitUrl)
                   .addRaw(` pushed to branch \`${branchName}\`.\n`);
             }
