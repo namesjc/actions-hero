@@ -48,7 +48,7 @@ jobs:
             // Get inputs from the workflow_dispatch event
             const newBranch = '${{ github.event.inputs.new_branch_name }}';
             const baseBranch = '${{ github.event.inputs.base_branch_name }}';
-            const repoUrl = context.payload.repository.html_url;
+            const repoUrl = context.serverUrl;
             const ref = `refs/heads/${newBranch}`;
 
             console.log(`Creating branch '${newBranch}' from '${baseBranch}'...`);
@@ -144,7 +144,7 @@ jobs:
           script: |
             const commitSha = '${{ steps.create_commit.outputs.commit_sha }}';
             const branchName = '${{ steps.create_branch.outputs.new_branch_name_output }}';
-            const repoUrl = context.payload.repository.html_url;
+            const repoUrl = context.serverUrl;
 
             core.summary.addHeading('Commit Details', 3).addRaw('\n');
 
@@ -171,12 +171,12 @@ jobs:
           script: |
             const newBranch = '${{ steps.create_branch.outputs.new_branch_name_output }}';
             const baseBranch = '${{ github.event.inputs.base_branch_name }}';
-            const runNumber = process.env.GITHUB_RUN_NUMBER;
-            const githubUrl = process.env.GITHUB_SERVER_URL;
+            const runNumber = context.runNumber;
+            const repoUrl = context.serverUrl;
             const prTitle = `Version Picker changes: Run#${runNumber}`;
             const prBody = `
               Version Picker changes:
-              - **Run Number**: [${runNumber} - Overview](${githubUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
+              - **Run Number**: [${runNumber} - Overview](${repoUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId})
               - **Run ID**: ${context.runId}
               - **Date**: ${new Date().toISOString().replace('T', ' ').slice(0, 19)}
             `.trim();
