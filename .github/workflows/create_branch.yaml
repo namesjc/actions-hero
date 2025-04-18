@@ -79,8 +79,7 @@ jobs:
               .addRaw(`\n`)
               .addRaw(`* ✅Successfully created branch: `)
               .addLink(`${newBranch}`, `${branchUrl}`)
-              .addRaw(`\n`)
-              .addRaw(`Base Branch: \`${baseBranch}\`\n`)
+              .addRaw(`* Base Branch: \`${baseBranch}\``, true)
               .addSeparator();
               await core.summary.write({ overwrite: false });
 
@@ -92,7 +91,7 @@ jobs:
               core.summary
               .addHeading('Branch Creation', 3)
               .addRaw(`\n`)
-              .addRaw(`* ❌ Failed to create branch '${newBranch}'. Error: ${error.message}\n`)
+              .addRaw(`* ❌ Failed to create branch '${newBranch}'. Error: ${error.message}`, true)
               .addSeparator();
               await core.summary.write();
 
@@ -151,14 +150,13 @@ jobs:
 
             if (!commitSha || commitSha === 'NONE') {
               const message = commitSha === 'NONE'
-              ? `* No file changes detected; no commit was created on branch \`${branchName}\`.\n`
-              : `* Failed to get commit details for branch \`${branchName}\` (Step likely failed).\n`;
-              core.summary.addRaw(message);
+              ? `* ℹ️ No file changes detected; no commit was created on branch \`${branchName}\`.`
+              : `* ❌ Failed to get commit details for branch \`${branchName}\` (Step likely failed).`;
+              core.summary.addRaw(message, true);
             } else {
               const commitUrl = `${repoUrl}/commit/${commitSha}`;
-              core.summary.addRaw(`* Commit `)
-                  .addLink(commitSha.substring(0, 7), commitUrl)
-                  .addRaw(` pushed to branch \`${branchName}\`.\n`);
+              core.summary.addRaw(`* ✅ Commit [${commitSha}.substring(0, 7)](${commitUrl})`)
+                  .addRaw(` pushed to branch \`${branchName}\`.`, true);
             }
 
             core.summary.addSeparator();
@@ -205,10 +203,10 @@ jobs:
 
               core.summary
               .addHeading('Pull Request Creation', 3)
+              .addRaw('\n')
               .addRaw(`* ✅ Successfully created Pull Request `)
               .addLink(`#${prNumber}`, prUrl)
-              .addRaw(`\n`)
-              .addRaw(`* Target Branch: \`${baseBranch}\`\n`)
+              .addRaw(`* Target Branch: \`${baseBranch}\``, true)
               .addSeparator();
               await core.summary.write({ overwrite: false });
 
@@ -218,14 +216,15 @@ jobs:
               const errorMsg = `Failed to create Pull Request for branch '${newBranch}' targeting '${baseBranch}'.`;
               core.summary
               .addHeading('Pull Request Creation', 3)
-              .addRaw(`❌ ${errorMsg}\n`)
-              .addRaw(`Error: ${error.message}\n`);
+              .addRaw('\n')
+              .addRaw(`* ❌ ${errorMsg}`, true)
+              .addRaw(`Error: ${error.message}`, true);
 
               if (error.message.includes("A pull request already exists")) {
-              core.summary.addRaw(`* ℹ️ An active pull request likely already exists for this branch.\n`);
+              core.summary.addRaw(`* ℹ️ An active pull request likely already exists for this branch.`, true);
               core.warning(`PR already exists for branch '${newBranch}'.`);
               } else if (error.message.includes("No commits between")) {
-              core.summary.addRaw(`* ℹ️ No commits between '${newBranch}' and '${baseBranch}'.\n`);
+              core.summary.addRaw(`* ℹ️ No commits between '${newBranch}' and '${baseBranch}'.`, true);
               core.warning(`No commits between '${newBranch}' and '${baseBranch}'.`);
               } else {
               core.setFailed(`Error creating Pull Request: ${error.message}`);
