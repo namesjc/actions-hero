@@ -213,7 +213,7 @@ jobs:
             } catch (error) {
               console.error(`Failed to create Pull Request: ${error.message}`);
 
-              const errorMsg = `Failed to create Pull Request for branch `${newBranch}` targeting `${baseBranch}``;
+              const errorMsg = `Failed to create Pull Request for branch \`${newBranch}\` targeting \`${baseBranch}\``;
               core.summary
               .addHeading('Pull Request Creation', 3)
               .addRaw('\n')
@@ -222,9 +222,9 @@ jobs:
 
               if (error.message.includes("A pull request already exists")) {
               core.summary.addRaw(`* ℹ️ An active pull request likely already exists for this branch.`, true);
-              core.warning(`PR already exists for branch `${newBranch}``);
+              core.warning(`PR already exists for branch \`${newBranch}\``);
               } else if (error.message.includes("No commits between")) {
-              core.summary.addRaw(`* ℹ️ No commits between `${newBranch}` and `${baseBranch}``, true);
+              core.summary.addRaw(`* ℹ️ No commits between \`${newBranch}\` and \`${baseBranch}\``, true);
               core.warning(`No commits between '${newBranch}' and '${baseBranch}'.`);
               } else {
               core.setFailed(`Error creating Pull Request: ${error.message}`);
