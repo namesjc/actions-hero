@@ -43,7 +43,7 @@ jobs:
         id: create_branch
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          # github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             // Get inputs from the workflow_dispatch event
             const newBranch = '${{ github.event.inputs.new_branch_name }}';
@@ -167,7 +167,7 @@ jobs:
         if: success() && steps.create_commit.outputs.commit_sha && steps.create_commit.outputs.commit_sha != 'NONE'
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          # github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const newBranch = '${{ steps.create_branch.outputs.new_branch_name_output }}';
             const baseBranch = '${{ github.event.inputs.base_branch_name }}';
