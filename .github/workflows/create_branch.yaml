@@ -25,10 +25,15 @@ on:
       #   description: "Body/description for the Pull Request"
       #   required: false # Optional
       #   default: "Pull request automatically created by workflow."
-      my_pat:
-        description: "GitHub Personal Access Token (PAT) with repo scope"
+      merge_method:
+        description: 'Merge method (merge, squash, rebase)'
         required: false
-        default: "" # Leave empty, will be set in the workflow
+        default: 'merge'
+        type: choice
+        options:
+        - merge
+        - squash
+        - rebase
 
 jobs:
   create_branch_commit_pr_job:
@@ -232,4 +237,79 @@ jobs:
 
               core.summary.addSeparator();
               await core.summary.write({ overwrite: false });
+            }
+
+      - name: Merge Pull Request
+        id: merge_pr
+        # Only run if PR creation step succeeded and produced a PR number
+        if: success() && steps.create_pr.outputs.pr_number && steps.create_pr.outputs.pr_number != 'NONE'
+        uses: actions/github-script@v7
+        with:
+          # github-token: ${{ secrets.GH_PAT }}
+          script: |
+            const prNumber = ${{ steps.create_pr.outputs.pr_number }};
+            const mergeMethod = '${{ github.event.inputs.merge_method }}';
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            console.log(`Attempting to merge Pull Request #${prNumber} using method '${mergeMethod}'...`);
+
+            try {
+              const response = await github.rest.pulls.merge({
+                owner: owner,
+                repo: repo,
+                pull_number: prNumber,
+                merge_method: mergeMethod, // 'merge', 'squash', or 'rebase'
+              });
+
+              if (response.status === 200 && response.data.merged) {
+                  const mergeCommitSha = response.data.sha;
+                  const repoUrl = context.payload.repository.html_url;
+                  const mergeCommitUrl = `${repoUrl}/commit/${mergeCommitSha}`;
+                  const successMsg = `Successfully merged Pull Request #${prNumber}. Merge commit: [${mergeCommitSha.substring(0,7)}](${mergeCommitUrl})`;
+                  console.log(successMsg);
+                  core.setOutput("merge_commit_sha", mergeCommitSha);
+
+                  core.summary.addHeading('Pull Request Merge', 3)
+                  .addRaw('\n')
+                  .addRaw(`* ✅ ${successMsg}`, true)
+                  .addRaw(`* Method: \`${mergeMethod}\``, true)
+                  .addSeparator();
+                  await core.summary.write({ overwrite: false });
+              } else {
+                  // Handle cases where merge was not possible (e.g., conflicts, checks failed)
+                  // The API might return 200 but with merged: false, or other status codes like 405 or 409
+                  const failureMsg = `Pull Request #${prNumber} could not be merged. Response status: ${response.status}. Message: ${response.data.message || 'No specific message.'}`;
+                  console.warn(failureMsg);
+                  core.warning(failureMsg); // Use warning instead of failure? Depends on desired behavior.
+
+                  // Add merge failure details to summary
+                  core.summary.addHeading('Pull Request Merge', 3)
+                  .addRaw('\n')
+                  .addRaw(`* ⚠️ ${failureMsg}`, true)
+                  .addSeparator();
+                  await core.summary.write({ overwrite: false });
+              }
+
+            } catch (error) {
+              console.error(`Error merging Pull Request #${prNumber}: ${error.message}`);
+              const errorMsg = `Failed to merge Pull Request #${prNumber}.`;
+
+              // Add error details to summary
+              core.summary.addHeading('Pull Request Merge', 3)
+              .addRaw('\n')
+              .addRaw(`* ❌ ${errorMsg} Error: ${error.message}`, true);
+              .addSeparator();
+              await core.summary.write({ overwrite: false });
+
+              // Decide if this should fail the whole workflow
+              if (error.message.includes("Pull Request is not mergeable")) {
+                core.warning(`${errorMsg} It's not in a mergeable state (e.g., conflicts, checks pending/failed).`);
+                // Consider not failing the job here, just warning
+              } else if (error.status === 404) {
+                 core.setFailed(`${errorMsg} Pull Request not found.`);
+              }
+              else {
+                core.setFailed(`${errorMsg} Error: ${error}`);
+              }
             }
