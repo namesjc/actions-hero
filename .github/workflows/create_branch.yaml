@@ -25,6 +25,9 @@ on:
       #   description: "Body/description for the Pull Request"
       #   required: false # Optional
       #   default: "Pull request automatically created by workflow."
+      automerge-allow:
+        description: "Allow automatic merge of Pull Request"
+        type: string
       reviewers:
         description: 'Comma-separated list of GitHub usernames to request reviews from (e.g., user1,user2)'
         required: false
@@ -231,7 +234,7 @@ jobs:
                     reviewers: reviewers
                   });
                   console.log(`Successfully requested reviews from: ${reviewers.join(', ')}`);
-                  core.summary.addRaw(`* Requested reviewers: ${reviewers.map(r => `\`${r}\``).join(', ')}\n`);
+                  core.summary.addRaw(`* Requested reviewers: ${reviewers.map(r => `\`${r}\``).join(', ')}`, true);
                 } catch (reviewError) {
                    console.error(`Error requesting reviewers: ${reviewError.message}`);
                    core.warning(`Failed to add reviewers: ${reviewError.message}`);
@@ -265,110 +268,110 @@ jobs:
               await core.summary.write({ overwrite: false });
             }
 
-      # - name: Merge Pull Request
-      #   id: merge_pr
-      #   # Only run if PR creation step succeeded and produced a PR number
-      #   if: ${{ success() && steps.create_pr.outputs.pr_number && steps.create_pr.outputs.pr_number != 'NONE' }}
-      #   uses: actions/github-script@v7
-      #   with:
-      #     # github-token: ${{ secrets.GH_PAT }}
-      #     script: |
-      #       const prNumber = ${{ steps.create_pr.outputs.pr_number }};
-      #       const mergeMethod = '${{ inputs.merge_method }}';
-      #       const owner = context.repo.owner;
-      #       const repo = context.repo.repo;
+      - name: Merge Pull Request
+        id: merge_pr
+        # Only run if PR creation step succeeded and produced a PR number
+        if: success() && inputs.auto_merge == 'true' && steps.create_pr.outputs.pr_number && steps.create_pr.outputs.pr_number != 'NONE'
+        uses: actions/github-script@v7
+        with:
+          # github-token: ${{ secrets.GH_PAT }}
+          script: |
+            const prNumber = ${{ steps.create_pr.outputs.pr_number }};
+            const mergeMethod = '${{ inputs.merge_method }}';
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
 
-      #       console.log(`Attempting to merge Pull Request #${prNumber} using method '${mergeMethod}'...`);
+            console.log(`Attempting to merge Pull Request #${prNumber} using method '${mergeMethod}'...`);
 
-      #       try {
-      #         const response = await github.rest.pulls.merge({
-      #           owner: owner,
-      #           repo: repo,
-      #           pull_number: prNumber,
-      #           merge_method: mergeMethod, // 'merge', 'squash', or 'rebase'
-      #         });
+            try {
+              const response = await github.rest.pulls.merge({
+                owner: owner,
+                repo: repo,
+                pull_number: prNumber,
+                merge_method: mergeMethod, // 'merge', 'squash', or 'rebase'
+              });
 
-      #         console.log('::response::');
-      #         console.log(response);
+              console.log('::response::');
+              console.log(response);
 
-      #         if (response.status === 200 && response.data.merged) {
-      #             const mergeCommitSha = response.data.sha;
-      #             const repoUrl = context.payload.repository.html_url;
-      #             const mergeCommitUrl = `${repoUrl}/commit/${mergeCommitSha}`;
-      #             const successMsg = `Successfully merged Pull Request #${prNumber}. Merge commit: [${mergeCommitSha.substring(0,7)}](${mergeCommitUrl})`;
-      #             console.log(successMsg);
-      #             core.setOutput("merge_commit_sha", mergeCommitSha);
+              if (response.status === 200 && response.data.merged) {
+                  const mergeCommitSha = response.data.sha;
+                  const repoUrl = context.payload.repository.html_url;
+                  const mergeCommitUrl = `${repoUrl}/commit/${mergeCommitSha}`;
+                  const successMsg = `Successfully merged Pull Request #${prNumber}. Merge commit: [${mergeCommitSha.substring(0,7)}](${mergeCommitUrl})`;
+                  console.log(successMsg);
+                  core.setOutput("merge_commit_sha", mergeCommitSha);
 
-      #             core.summary
-      #             .addHeading('Pull Request Merge', 3)
-      #             .addRaw('\n')
-      #             .addRaw(`* ✅ ${successMsg}`, true)
-      #             .addRaw(`* Method: \`${mergeMethod}\``, true)
-      #             .addSeparator();
-      #             await core.summary.write({ overwrite: false });
-      #         } else {
-      #             const failureMsg = `Pull Request #${prNumber} could not be merged. Response status: ${response.status}. Message: ${response.data.message || 'No specific message.'}`;
-      #             console.warn(failureMsg);
-      #             core.warning(failureMsg);
+                  core.summary
+                  .addHeading('Pull Request Merge', 3)
+                  .addRaw('\n')
+                  .addRaw(`* ✅ ${successMsg}`, true)
+                  .addRaw(`* Method: \`${mergeMethod}\``, true)
+                  .addSeparator();
+                  await core.summary.write({ overwrite: false });
+              } else {
+                  const failureMsg = `Pull Request #${prNumber} could not be merged. Response status: ${response.status}. Message: ${response.data.message || 'No specific message.'}`;
+                  console.warn(failureMsg);
+                  core.warning(failureMsg);
 
-      #             core.summary
-      #             .addHeading('Pull Request Merge', 3)
-      #             .addRaw('\n')
-      #             .addRaw(`* ⚠️ ${failureMsg}`, true)
-      #             .addSeparator();
-      #             await core.summary.write({ overwrite: false });
-      #         }
+                  core.summary
+                  .addHeading('Pull Request Merge', 3)
+                  .addRaw('\n')
+                  .addRaw(`* ⚠️ ${failureMsg}`, true)
+                  .addSeparator();
+                  await core.summary.write({ overwrite: false });
+              }
 
-      #       } catch (error) {
-      #         console.error(`Error merging Pull Request #${prNumber}: ${error.message}`);
-      #         const errorMsg = `Failed to merge Pull Request #${prNumber}.`;
+            } catch (error) {
+              console.error(`Error merging Pull Request #${prNumber}: ${error.message}`);
+              const errorMsg = `Failed to merge Pull Request #${prNumber}.`;
 
-      #         core.summary
-      #         .addHeading('Pull Request Merge', 3)
-      #         .addRaw('\n')
-      #         .addRaw(`* ❌ ${errorMsg} Error: ${error.message}`, true)
-      #         .addSeparator();
-      #         await core.summary.write({ overwrite: false });
+              core.summary
+              .addHeading('Pull Request Merge', 3)
+              .addRaw('\n')
+              .addRaw(`* ❌ ${errorMsg} Error: ${error.message}`, true)
+              .addSeparator();
+              await core.summary.write({ overwrite: false });
 
-      #         if (error.message.includes("Pull Request is not mergeable")) {
-      #           core.warning(`${errorMsg} It's not in a mergeable state (e.g., conflicts, checks pending/failed).`);
-      #         } else if (error.status === 404) {
-      #            core.setFailed(`${errorMsg} Pull Request not found.`);
-      #         }
-      #         else {
-      #           core.setFailed(`${errorMsg} Error: ${error}`);
-      #         }
-      #       }
+              if (error.message.includes("Pull Request is not mergeable")) {
+                core.warning(`${errorMsg} It's not in a mergeable state (e.g., conflicts, checks pending/failed).`);
+              } else if (error.status === 404) {
+                 core.setFailed(`${errorMsg} Pull Request not found.`);
+              }
+              else {
+                core.setFailed(`${errorMsg} Error: ${error}`);
+              }
+            }
 
-      # - name: Delete Branch
-      #   if: ${{ success() && steps.merge_pr.outputs.merge_commit_sha }}
-      #   uses: actions/github-script@v7
-      #   with:
-      #     # github-token: ${{ secrets.GH_PAT }}
-      #     script: |
-      #       const branchName = '${{ steps.create_branch.outputs.new_branch_name_output }}';
-      #       const ref = `heads/${branchName}`;
-      #       console.log(`Attempting to delete branch '${branchName}'...`);
-      #       try {
-      #         await github.rest.git.deleteRef({
-      #           owner: context.repo.owner,
-      #           repo: context.repo.repo,
-      #           ref: ref,
-      #         });
-      #         console.log(`Successfully deleted branch '${branchName}'.`);
-      #         core.summary
-      #         .addHeading('Branch Deletion', 3)
-      #         .addRaw('\n')
-      #         .addRaw(`* ✅ Successfully deleted branch \`${branchName}\`.`, true)
-      #         .addSeparator();
-      #         await core.summary.write({ overwrite: false });
-      #       } catch (error) {
-      #         console.error(`Error deleting branch '${branchName}': ${error.message}`);
-      #         core.warning(`Failed to delete branch '${branchName}'. Error: ${error.message}`);
-      #         core.summary
-      #         .addHeading('Branch Deletion', 3)
-      #         .addRaw('\n')
-      #         .addRaw(`* ⚠️ Failed to delete branch \`${branchName}\`. Error: ${error.message}`, true)
-      #         .addSeparator();
-      #         await core.summary.write({ overwrite: false });
-      #       }
+      - name: Delete Branch
+        if: ${{ success() && steps.merge_pr.outputs.merge_commit_sha }}
+        uses: actions/github-script@v7
+        with:
+          # github-token: ${{ secrets.GH_PAT }}
+          script: |
+            const branchName = '${{ steps.create_branch.outputs.new_branch_name_output }}';
+            const ref = `heads/${branchName}`;
+            console.log(`Attempting to delete branch '${branchName}'...`);
+            try {
+              await github.rest.git.deleteRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: ref,
+              });
+              console.log(`Successfully deleted branch '${branchName}'.`);
+              core.summary
+              .addHeading('Branch Deletion', 3)
+              .addRaw('\n')
+              .addRaw(`* ✅ Successfully deleted branch \`${branchName}\`.`, true)
+              .addSeparator();
+              await core.summary.write({ overwrite: false });
+            } catch (error) {
+              console.error(`Error deleting branch '${branchName}': ${error.message}`);
+              core.warning(`Failed to delete branch '${branchName}'. Error: ${error.message}`);
+              core.summary
+              .addHeading('Branch Deletion', 3)
+              .addRaw('\n')
+              .addRaw(`* ⚠️ Failed to delete branch \`${branchName}\`. Error: ${error.message}`, true)
+              .addSeparator();
+              await core.summary.write({ overwrite: false });
+            }
