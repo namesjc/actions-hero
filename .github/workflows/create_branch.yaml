@@ -27,6 +27,7 @@ on:
       #   default: "Pull request automatically created by workflow."
       automerge-allow:
         description: "Allow automatic merge of Pull Request"
+        default: false
         type: string
       reviewers:
         description: 'Comma-separated list of GitHub usernames to request reviews from (e.g., user1,user2)'
@@ -271,7 +272,7 @@ jobs:
       - name: Merge Pull Request
         id: merge_pr
         # Only run if PR creation step succeeded and produced a PR number
-        if: success() && inputs.auto_merge == 'true' && steps.create_pr.outputs.pr_number && steps.create_pr.outputs.pr_number != 'NONE'
+        if: success() && inputs.automerge-allow == 'true' && steps.create_pr.outputs.pr_number && steps.create_pr.outputs.pr_number != 'NONE'
         uses: actions/github-script@v7
         with:
           # github-token: ${{ secrets.GH_PAT }}
