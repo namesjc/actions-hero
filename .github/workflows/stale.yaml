@@ -12,19 +12,20 @@ jobs:
       pull-requests: write
       contents: write
     steps:
-      - name: Generate Short Lived OAuth App Token
-        uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
-        id: app-token
-        with:
-          app-id: "${{ secrets.BOT_APP_ID }}"
-          private-key: "${{ secrets.BOT_APP_PRIVATE_KEY }}"
-          owner: "${{ github.repository_owner }}"
-          repositories: "${{ github.event.repository.name }}"
+      # - name: Generate Short Lived OAuth App Token
+      #   uses: actions/create-github-app-token@29824e69f54612133e76f7eaac726eef6c875baf # v2.2.1
+      #   id: app-token
+      #   with:
+      #     app-id: "${{ secrets.BOT_APP_ID }}"
+      #     private-key: "${{ secrets.BOT_APP_PRIVATE_KEY }}"
+      #     owner: "${{ github.repository_owner }}"
+      #     repositories: "${{ github.event.repository.name }}"
 
-      - name: Stale Issues and Pull Requests
+      - name: Stale Pull Requests
         uses: actions/stale@997185467fa4f803885201cee163a9f38240193d # v10
         with:
-          repo-token: "${{ steps.app-token.outputs.token }}"
+          # repo-token: "${{ steps.app-token.outputs.token }}"
+          exempt-issue-labels: pinned
           days-before-stale: 5
           days-before-close: 1
           remove-stale-when-updated: true
@@ -33,7 +34,7 @@ jobs:
           stale-pr-message: >
             Marking this pull request as stale due to inactivity in the past
             5 days. This helps us focus on the active pull requests. If this
-            pull request receives no comments in the next 2 days it will 
+            pull request receives no comments in the next 1 days it will 
             automatically be closed.
             If this pull request was automatically closed and you feel this
             pull request should be reopened, we encourage creating a new pull
