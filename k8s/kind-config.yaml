@@ -1,19 +1,14 @@
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
-# networking:
-#   apiServerAddress: "127.0.0.1"
-#   apiServerPort: 6443
-# kubeadmConfigPatches:
-#   - |-
-#     kind: ClusterConfiguration
-#     # configure controller-manager bind address
-#     controllerManager:
-#       extraArgs:
-#         bind-address: 0.0.0.0
-#     # configure scheduler bind address
-#     scheduler:
-#       extraArgs:
-#         bind-address: 0.0.0.0
+kubeadmConfigPatches:
+  - |-
+    kind: ClusterConfiguration
+    apiServer:
+      extraArgs:
+        oidc-client-id: kube
+        oidc-issuer-url: https://keycloak.adiachan.cn/auth/realms/kind
+        oidc-username-claim: email
+        oidc-groups-claim: groups
 nodes:
   - role: control-plane
     kubeadmConfigPatches:
@@ -29,5 +24,3 @@ nodes:
       - containerPort: 443
         hostPort: 443
         protocol: TCP
-  - role: worker
-  - role: worker
