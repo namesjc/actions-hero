@@ -10,3 +10,9 @@ https://github.com/int128/kubelogin/blob/master/docs/setup.md
 
 # standalone
 https://github.com/int128/kubelogin/blob/master/docs/standalone-mode.md
+
+# debug
+```bash
+$ rm -rf ~/.kube/cache
+$ rm -rf ~/.kube/http-cache
+```
