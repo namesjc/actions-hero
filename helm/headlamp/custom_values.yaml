@@ -2,7 +2,7 @@ config:
   oidc:
     clientID: "kube"
     issuerURL: "https://keycloak.adiachan.cn/auth/realms/kind"
-    scopes: "email,groups,offline_access"
+    scopes: "email,groups"
     useAccessToken: false
   enableHelm: false
 
@@ -18,9 +18,9 @@ ingress:
   hosts:
     - host: headlamp.adiachan.cn
       paths:
-      - path: /
-        type: ImplementationSpecific
+        - path: /
+          type: ImplementationSpecific
   tls:
-   - secretName: headlamp-tls
-     hosts:
-       - headlamp.adiachan.cn
+    - secretName: headlamp-tls
+      hosts:
+        - headlamp.adiachan.cn
