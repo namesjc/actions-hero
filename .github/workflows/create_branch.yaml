@@ -118,7 +118,7 @@ jobs:
 
       - name: Checkout new branch
         if: success() && steps.create_branch.outputs.new_branch_name_output
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: ${{ steps.create_branch.outputs.new_branch_name_output }}
           fetch-depth: 1
