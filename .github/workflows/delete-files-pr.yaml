@@ -1,0 +1,46 @@
+name: PR Delete Handler
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - closed
+
+jobs:
+  detect-deleted-files:
+    # Only merged PRs, not PRs that were simply closed
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      pull-requests: read
+
+    steps:
+      - name: Find deleted files
+        id: deleted
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          deleted_files=$(gh api \
+            "repos/${REPO}/pulls/${PR_NUMBER}/files" \
+            --paginate \
+            --jq '.[] | select(.status == "removed") | .filename')
+
+          echo "Deleted files:"
+          echo "$deleted_files"
+
+          if [ -n "$deleted_files" ]; then
+            echo "has_deleted_files=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_deleted_files=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run deletion logic
+        if: steps.deleted.outputs.has_deleted_files == 'true'
+        run: |
+          echo "This merged PR deleted files."
+          echo "Run your decommission/delete workflow here."
