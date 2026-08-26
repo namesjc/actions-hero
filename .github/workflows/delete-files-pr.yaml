@@ -43,4 +43,4 @@ jobs:
         if: steps.deleted.outputs.has_deleted_files == 'true'
         run: |
           echo "This merged PR deleted files."
-          echo "Run your decommission/delete workflow here."
+          echo ${{ github.sha }}
