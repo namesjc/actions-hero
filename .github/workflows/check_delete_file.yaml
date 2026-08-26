@@ -1,0 +1,42 @@
+name: Check deleted files
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  check-deletion:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check deleted files
+        id: deleted
+        shell: bash
+        run: |
+          BEFORE="${{ github.event.before }}"
+          AFTER="${{ github.sha }}"
+
+          echo "Before: $BEFORE"
+          echo "After:  $AFTER"
+
+          deleted_files=$(git diff --name-only --diff-filter=D "$BEFORE" "$AFTER")
+
+          echo "Deleted files:"
+          echo "$deleted_files"
+
+          if [ -n "$deleted_files" ]; then
+            echo "has_deleted_files=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_deleted_files=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run deletion logic
+        if: steps.deleted.outputs.has_deleted_files == 'true'
+        run: |
+          echo "This push contains deleted files"
